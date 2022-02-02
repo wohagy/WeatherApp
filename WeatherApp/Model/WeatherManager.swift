@@ -8,9 +8,12 @@
 
 import Foundation
 
+protocol WeatherDelegate {
+    func didUpdateWeather(weather: WeatherModel)
+}
+  
+
 struct WeatherManager {
-    
-    
     
     let openWeatherURL = "https://api.openweathermap.org/data/2.5/weather?"
     let apiKey = "63c29d629990918ee2998a644c3d705d"
@@ -19,15 +22,14 @@ struct WeatherManager {
         return isMetric ? "metric" : "imperial"
     }
     
+    var delegate: WeatherDelegate?
+    
     func fetchWeather(cityName: String?) {
-        guard let city = cityName else {
-            return
-        }
+        guard let city = cityName else {return}
         let finalURL = openWeatherURL +
-                        "appid=" + apiKey +
-                        "&units=" + units +
-                        "&q=" + city
-        
+            "appid=" + apiKey +
+            "&units=" + units +
+            "&q=" + city
         performRequest(with: finalURL)
     }
     
@@ -40,37 +42,27 @@ struct WeatherManager {
                     return
                 }
                 if let safeData = data {
-                    self.parseJSON(weatherData: safeData)
+                    if let weather = self.parseJSON(weatherData: safeData) {
+                        delegate?.didUpdateWeather(weather: weather)
+                    }
                 }
             }
             task.resume()
         }
     }
     
-    func parseJSON(weatherData: Data) {
+    func parseJSON(weatherData: Data) -> WeatherModel? {
         let decoder = JSONDecoder()
         do {
             let decoded = try decoder.decode(WeatherData.self, from: weatherData)
-            print(getWeatherIconName(for: decoded.weather[0].id))
+            let id = decoded.weather[0].id
+            let temperature = decoded.main.temp
+            let name = decoded.name
+            let weather = WeatherModel(conditionID: id, cintyName: name, temperature: temperature)
+            return weather
         } catch {
             print(error)
-        }
-    }
-    
-    func getWeatherIconName(for id: Int) -> String{
-        switch id {
-        case 200...232:
-            return "thunderstorm"
-        case 300...321:
-            return "drizzle"
-        case 500...531:
-            return "rain"
-        case 600...622:
-            return "snow"
-        case 801...801:
-            return "clouds"
-        default:
-            return "sun"
+            return nil
         }
     }
 }
