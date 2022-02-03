@@ -6,6 +6,7 @@
 //  Copyright © 2022 wohagy. All rights reserved.
 //
 
+import CoreLocation
 import Foundation
 
 protocol WeatherDelegate {
@@ -32,6 +33,13 @@ struct WeatherManager {
             "&q=" + city
         performRequest(with: finalURL)
     }
+    
+    func fetchWeather(longitude: CLLocationDegrees, latitude: CLLocationDegrees) {
+        let finalURL = openWeatherURL +
+            "appid=" + apiKey + "&lat=\(latitude)" + "&lon=\(longitude)" + "&units=" + units
+        performRequest(with: finalURL)
+    }
+
     
     func performRequest(with urlStrig: String) {
         if let url = URL(string: urlStrig) {
